@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivia de Mitología Griega</title>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --dark: #1a1a1a;
+            --white: #f4f4f4;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Contenedor de la tarjeta */
+        .card-container {
+            width: 350px;
+            height: 450px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+            border-radius: 15px;
+        }
+        .card.flipped { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            box-sizing: border-box;
+            border-radius: 15px;
+            border: 3px solid var(--gold);
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .card-front { background: #2a2a2a; color: white; }
+        .card-back {
+            background: var(--gold);
+            color: var(--dark);
+            transform: rotateY(180deg);
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+
+        button {
+            margin-top: 30px;
+            padding: 12px 25px;
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: var(--gold);
+            color: var(--dark);
+        }
+        .counter { margin-top: 10px; font-size: 0.9rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <h1>Mitos de Grecia</h1>
+    
+    <div class="card-container" onclick="flipCard()">
+        <div class="card" id="card">
+            <div class="card-face card-front" id="questionText">Cargando pregunta...</div>
+            <div class="card-face card-back" id="answerText">Cargando respuesta...</div>
+        </div>
+    </div>
+
+    <button onclick="nextQuestion()">Siguiente Pregunta</button>
+    <div class="counter" id="counter">Pregunta 1 de 52</div>
+
+    <script>
+        const trivia = [
+            { q: "¿Quién creó a Pandora por orden de Zeus?", a: "Hefesto" },
+            { q: "¿Cuál era el propósito original de la creación de Pandora?", a: "Vengarse de Prometeo" },
+            { q: "¿Qué cualidad negativa recibió Pandora de los dioses?", a: "La capacidad de seducir y mentir" },
+            { q: "¿Con quién se casó Pandora?", a: "Epimeteo" },
+            { q: "¿Qué quedó dentro de la caja de Pandora tras abrirla?", a: "La esperanza" },
+            { q: "¿De dónde surgió la diosa Afrodita según el mito de Hesíodo?", a: "De la espuma del mar" },
+            { q: "¿Quién castró a su padre Urano con una hoz?", a: "Cronos" },
+            { q: "¿Qué elementos se mezclaron con el mar para dar origen a Afrodita?", a: "Sangre y semen de Urano" },
+            { q: "¿Qué era Medusa antes de ser transformada en monstruo?", a: "Una hermosa sacerdotisa de Atenea" },
+            { q: "¿Qué dios raptó a Medusa en el templo de Atenea?", a: "Poseidón" },
+            { q: "¿En qué convirtió Atenea el cabello de Medusa?", a: "En furiosas serpientes" },
+            { q: "¿Qué efecto tenía la mirada de Medusa en las personas?", a: "Las convertía en piedra" },
+            { q: "¿Quién era el sabio padre de Ícaro?", a: "Dédalo" },
+            { q: "¿Qué estructura construyó Dédalo para encerrar al Minotauro?", a: "El Laberinto" },
+            { q: "¿De qué materiales estaban hechas las alas de Ícaro?", a: "De cera y plumas de pájaros" },
+            { q: "¿Por qué murió Ícaro al volar?", a: "Se acercó demasiado al sol y la cera se derritió" },
+            { q: "¿Qué significa el nombre del pueblo de los mirmidones?", a: "Hombres hormiga" },
+            { q: "¿Cómo repobló Zeus la isla de Éaco tras una plaga?", a: "Transformó las hormigas de un roble en personas" },
+            { q: "¿De qué ciudad era rey Sísifo?", a: "Éfira (Corinto)" },
+            { q: "¿A qué deidad de la muerte engañó Sísifo?", a: "A Tánatos" },
+            { q: "¿Qué truco usó Sísifo para volver a la vida?", a: "Dijo que su esposa no le había rendido honores funerarios" },
+            { q: "¿Cuál fue el castigo eterno de Sísifo?", a: "Subir una piedra a una cima que siempre volvía a caer" },
+            { q: "¿Por qué Tiresias fue convertido en mujer?", a: "Por golpear a una serpiente hembra copulando" },
+            { q: "¿Por qué Hera dejó ciego a Tiresias?", a: "Dijo que la mujer disfrutaba más del sexo que el hombre" },
+            { q: "¿Qué don compensatorio le dio Zeus a Tiresias?", a: "El don de la clarividencia" },
+            { q: "¿Qué castigo recibió la ninfa Eco por parte de Hera?", a: "Solo poder repetir las últimas palabras que escuchara" },
+            { q: "¿De quién se enamoró perdidamente la ninfa Eco?", a: "De Narciso" },
+            { q: "¿Qué predijo Tiresias sobre la vida de Narciso?", a: "Que viviría mucho si no veía su reflejo" },
+            { q: "¿Cómo murió Narciso?", a: "Se ahogó al intentar acercarse a su reflejo" },
+            { q: "¿Qué criatura nació de Pasifae tras la ofensa de Minos?", a: "El Minotauro" },
+            { q: "¿De qué se alimentaba el Minotauro?", a: "De carne humana de sacrificios" },
+            { q: "¿Quién mató al Minotauro?", a: "Teseo" },
+            { q: "¿Qué objeto usó Teseo para salir del laberinto?", a: "Un ovillo de hilo entregado por Ariadna" },
+            { q: "¿Qué elemento robó Prometeo del carro de Helios?", a: "El fuego" },
+            { q: "¿Cuál fue el tormento eterno de Prometeo?", a: "Un águila devoraba su hígado cada día" },
+            { q: "¿Qué dilema plantea la leyenda del barco de Teseo?", a: "¿Sigue siendo el mismo objeto si se cambian todas sus piezas?" },
+            { q: "¿Quiénes eran las tres hermanas que controlaban el destino?", a: "Las Moiras o Parcas" },
+            { q: "¿Qué representaban los hilos de oro en el tejido de las Moiras?", a: "Momentos de felicidad extrema" },
+            { q: "¿Cuál de las Moiras realizaba el corte final?", a: "Átropos" },
+            { q: "¿Qué rey fundó originalmente Atenas?", a: "Cécrope I" },
+            { q: "¿Qué regalo ofreció Poseidón a Atenas?", a: "Un manantial de agua salada" },
+            { q: "¿Qué regalo de Atenea hizo que ganara el patronazgo?", a: "Un árbol de olivo" },
+            { q: "¿Qué predijo el Oráculo sobre Edipo?", a: "Que mataría a su padre y se casaría con su madre" },
+            { q: "¿Qué significa el nombre Edipo?", a: "Pie hinchado" },
+            { q: "¿Cuál era el acertijo de la Esfinge?", a: "El ser que camina en 4, 2 y 3 patas (el hombre)" },
+            { q: "¿Quién era la madre de Edipo?", a: "Yocasta" },
+            { q: "¿Cómo murió Eurídice, esposa de Orfeo?", a: "Por la mordedura de una serpiente venenosa" },
+            { q: "¿Qué condición le pusieron a Orfeo para recuperar a su esposa?", a: "No mirar atrás hasta estar fuera del inframundo" },
+            { q: "¿Por qué Niobe fue castigada por Apolo y Artemisa?", a: "Por burlarse de la diosa Leto" },
+            { q: "¿En qué se convirtió Niobe tras morir sus hijos?", a: "En una roca que llora" },
+            { q: "¿Qué monstruo mató Belerofonte?", a: "La Quimera" },
+            { q: "¿Por qué Zeus hizo caer a Belerofonte de Pegaso?", a: "Por intentar volar hasta el Olimpo" }
+        ];
+
+        let currentIndex = 0;
+
+        function flipCard() {
+            document.getElementById('card').classList.toggle('flipped');
+        }
+
+        function nextQuestion() {
+            const card = document.getElementById('card');
+            card.classList.remove('flipped'); // Resetear vuelta
+            
+            setTimeout(() => {
+                currentIndex = Math.floor(Math.random() * trivia.length);
+                document.getElementById('questionText').innerText = trivia[currentIndex].q;
+                document.getElementById('answerText').innerText = trivia[currentIndex].a;
+                document.getElementById('counter').innerText = `Pregunta aleatoria activa`;
+            }, 200); // Pequeña espera para que no se vea el cambio de texto antes de girar
+        }
+
+        // Iniciar con la primera pregunta
+        nextQuestion();
+    </script>
+</body>
+</html>
