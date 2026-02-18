@@ -3,178 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivia de Mitología Griega</title>
+    <title>Desafío Mitológico - Puntos y Navegación</title>
     <style>
-        :root {
-            --gold: #d4af37;
-            --dark: #1a1a1a;
-            --white: #f4f4f4;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--dark);
-            color: var(--white);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-        h1 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
-        
-        /* Contenedor de la tarjeta */
-        .card-container {
-            width: 350px;
-            height: 450px;
-            perspective: 1000px;
-            cursor: pointer;
-        }
-        .card {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s;
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-        }
-        .card.flipped { transform: rotateY(180deg); }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        #quiz-container { background: white; max-width: 700px; width: 100%; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .score-box { font-size: 1.2rem; font-weight: bold; color: #2c3e50; background: #ecf0f1; padding: 5px 15px; border-radius: 20px; }
+        .question { display: none; }
+        .question.active { display: block; animation: fadeIn 0.3s; }
+        .options-grid { display: grid; gap: 10px; margin: 20px 0; }
+        button.option { padding: 12px; border: 2px solid #ddd; border-radius: 8px; background: white; cursor: pointer; text-align: left; font-size: 1rem; }
+        button.option:disabled { cursor: default; opacity: 0.8; }
+        /* Colores para respuestas ya dadas */
+        button.option.correct { background: #d4edda; border-color: #28a745; color: #155724; }
+        button.option.wrong { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        button.option.selected-neutral { border-color: #3498db; background: #e8f4fd; }
 
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-            box-sizing: border-box;
-            border-radius: 15px;
-            border: 3px solid var(--gold);
-            text-align: center;
-            font-size: 1.2rem;
-        }
-
-        .card-front { background: #2a2a2a; color: white; }
-        .card-back {
-            background: var(--gold);
-            color: var(--dark);
-            transform: rotateY(180deg);
-            font-weight: bold;
-            font-size: 1.4rem;
-        }
-
-        button {
-            margin-top: 30px;
-            padding: 12px 25px;
-            background: transparent;
-            border: 2px solid var(--gold);
-            color: var(--gold);
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: 0.3s;
-        }
-        button:hover {
-            background: var(--gold);
-            color: var(--dark);
-        }
-        .counter { margin-top: 10px; font-size: 0.9rem; opacity: 0.7; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .nav-btn { padding: 10px 25px; cursor: pointer; border-radius: 5px; border: none; background: #3498db; color: white; font-weight: bold; }
+        .nav-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <h1>Mitos de Grecia</h1>
-    
-    <div class="card-container" onclick="flipCard()">
-        <div class="card" id="card">
-            <div class="card-face card-front" id="questionText">Cargando pregunta...</div>
-            <div class="card-face card-back" id="answerText">Cargando respuesta...</div>
-        </div>
+<div id="quiz-container">
+    <div class="header">
+        <h2>🏛️ Trivia de Mitología</h2>
+        <div class="score-box">Puntos: <span id="current-points">0</span></div>
     </div>
+    
+    <div id="questions-area"></div>
 
-    <button onclick="nextQuestion()">Siguiente Pregunta</button>
-    <div class="counter" id="counter">Pregunta 1 de 52</div>
+    <div class="nav-buttons">
+        <button class="nav-btn" id="prev-btn" onclick="changeQuestion(-1)">⬅️ Anterior</button>
+        <button class="nav-btn" id="next-btn" onclick="changeQuestion(1)">Siguiente ➡️</button>
+    </div>
+</div>
 
-    <script>
-        const trivia = [
-            { q: "¿Quién creó a Pandora por orden de Zeus?", a: "Hefesto" },
-            { q: "¿Cuál era el propósito original de la creación de Pandora?", a: "Vengarse de Prometeo" },
-            { q: "¿Qué cualidad negativa recibió Pandora de los dioses?", a: "La capacidad de seducir y mentir" },
-            { q: "¿Con quién se casó Pandora?", a: "Epimeteo" },
-            { q: "¿Qué quedó dentro de la caja de Pandora tras abrirla?", a: "La esperanza" },
-            { q: "¿De dónde surgió la diosa Afrodita según el mito de Hesíodo?", a: "De la espuma del mar" },
-            { q: "¿Quién castró a su padre Urano con una hoz?", a: "Cronos" },
-            { q: "¿Qué elementos se mezclaron con el mar para dar origen a Afrodita?", a: "Sangre y semen de Urano" },
-            { q: "¿Qué era Medusa antes de ser transformada en monstruo?", a: "Una hermosa sacerdotisa de Atenea" },
-            { q: "¿Qué dios raptó a Medusa en el templo de Atenea?", a: "Poseidón" },
-            { q: "¿En qué convirtió Atenea el cabello de Medusa?", a: "En furiosas serpientes" },
-            { q: "¿Qué efecto tenía la mirada de Medusa en las personas?", a: "Las convertía en piedra" },
-            { q: "¿Quién era el sabio padre de Ícaro?", a: "Dédalo" },
-            { q: "¿Qué estructura construyó Dédalo para encerrar al Minotauro?", a: "El Laberinto" },
-            { q: "¿De qué materiales estaban hechas las alas de Ícaro?", a: "De cera y plumas de pájaros" },
-            { q: "¿Por qué murió Ícaro al volar?", a: "Se acercó demasiado al sol y la cera se derritió" },
-            { q: "¿Qué significa el nombre del pueblo de los mirmidones?", a: "Hombres hormiga" },
-            { q: "¿Cómo repobló Zeus la isla de Éaco tras una plaga?", a: "Transformó las hormigas de un roble en personas" },
-            { q: "¿De qué ciudad era rey Sísifo?", a: "Éfira (Corinto)" },
-            { q: "¿A qué deidad de la muerte engañó Sísifo?", a: "A Tánatos" },
-            { q: "¿Qué truco usó Sísifo para volver a la vida?", a: "Dijo que su esposa no le había rendido honores funerarios" },
-            { q: "¿Cuál fue el castigo eterno de Sísifo?", a: "Subir una piedra a una cima que siempre volvía a caer" },
-            { q: "¿Por qué Tiresias fue convertido en mujer?", a: "Por golpear a una serpiente hembra copulando" },
-            { q: "¿Por qué Hera dejó ciego a Tiresias?", a: "Dijo que la mujer disfrutaba más del sexo que el hombre" },
-            { q: "¿Qué don compensatorio le dio Zeus a Tiresias?", a: "El don de la clarividencia" },
-            { q: "¿Qué castigo recibió la ninfa Eco por parte de Hera?", a: "Solo poder repetir las últimas palabras que escuchara" },
-            { q: "¿De quién se enamoró perdidamente la ninfa Eco?", a: "De Narciso" },
-            { q: "¿Qué predijo Tiresias sobre la vida de Narciso?", a: "Que viviría mucho si no veía su reflejo" },
-            { q: "¿Cómo murió Narciso?", a: "Se ahogó al intentar acercarse a su reflejo" },
-            { q: "¿Qué criatura nació de Pasifae tras la ofensa de Minos?", a: "El Minotauro" },
-            { q: "¿De qué se alimentaba el Minotauro?", a: "De carne humana de sacrificios" },
-            { q: "¿Quién mató al Minotauro?", a: "Teseo" },
-            { q: "¿Qué objeto usó Teseo para salir del laberinto?", a: "Un ovillo de hilo entregado por Ariadna" },
-            { q: "¿Qué elemento robó Prometeo del carro de Helios?", a: "El fuego" },
-            { q: "¿Cuál fue el tormento eterno de Prometeo?", a: "Un águila devoraba su hígado cada día" },
-            { q: "¿Qué dilema plantea la leyenda del barco de Teseo?", a: "¿Sigue siendo el mismo objeto si se cambian todas sus piezas?" },
-            { q: "¿Quiénes eran las tres hermanas que controlaban el destino?", a: "Las Moiras o Parcas" },
-            { q: "¿Qué representaban los hilos de oro en el tejido de las Moiras?", a: "Momentos de felicidad extrema" },
-            { q: "¿Cuál de las Moiras realizaba el corte final?", a: "Átropos" },
-            { q: "¿Qué rey fundó originalmente Atenas?", a: "Cécrope I" },
-            { q: "¿Qué regalo ofreció Poseidón a Atenas?", a: "Un manantial de agua salada" },
-            { q: "¿Qué regalo de Atenea hizo que ganara el patronazgo?", a: "Un árbol de olivo" },
-            { q: "¿Qué predijo el Oráculo sobre Edipo?", a: "Que mataría a su padre y se casaría con su madre" },
-            { q: "¿Qué significa el nombre Edipo?", a: "Pie hinchado" },
-            { q: "¿Cuál era el acertijo de la Esfinge?", a: "El ser que camina en 4, 2 y 3 patas (el hombre)" },
-            { q: "¿Quién era la madre de Edipo?", a: "Yocasta" },
-            { q: "¿Cómo murió Eurídice, esposa de Orfeo?", a: "Por la mordedura de una serpiente venenosa" },
-            { q: "¿Qué condición le pusieron a Orfeo para recuperar a su esposa?", a: "No mirar atrás hasta estar fuera del inframundo" },
-            { q: "¿Por qué Niobe fue castigada por Apolo y Artemisa?", a: "Por burlarse de la diosa Leto" },
-            { q: "¿En qué se convirtió Niobe tras morir sus hijos?", a: "En una roca que llora" },
-            { q: "¿Qué monstruo mató Belerofonte?", a: "La Quimera" },
-            { q: "¿Por qué Zeus hizo caer a Belerofonte de Pegaso?", a: "Por intentar volar hasta el Olimpo" }
-        ];
+<script>
+    const questions = [
+        { q: "¿Qué truco utilizó Prometeo para engañar a Zeus en el reparto del buey?", a: ["Escondió la carne bajo una piel de aspecto desagradable.", "Mezcló la carne con piedras brillantes.", "Envolvió los huesos en grasa apetitosa para que Zeus los eligiera.", "Le ofreció el buey entero a cambio del fuego."], correct: 2 },
+        { q: "¿Quién fue el encargado de modelar a Pandora en la fragua de Lemnos?", a: ["Zeus", "Hefesto", "Hermes", "Prometeo"], correct: 1 },
+        { q: "¿Cuál fue el último 'regalo' que Zeus le dio a Pandora antes de enviarla a la Tierra?", a: ["La belleza divina", "La habilidad para tejer", "El don de la curiosidad", "Una voz dulce como la de los pájaros"], correct: 2 },
+        { q: "¿Qué quedó en el fondo de la caja de Pandora tras abrirla?", a: ["La enfermedad", "El odio", "La muerte", "La esperanza"], correct: 3 },
+        { q: "¿Quién avisó a Deucalión de que Zeus iba a inundar la Tierra con un diluvio?", a: ["Su padre, Prometeo", "La diosa Temis", "El dios Hermes", "El titán Epimeteo"], correct: 0 },
+        { q: "¿Qué eran en realidad 'los huesos de la madre' que Deucalión y Pirra debían arrojar tras de sí?", a: ["Restos de antepasados", "Ramas de olivo", "Piedras de la tierra", "Conchas marinas"], correct: 2 },
+        { q: "¿En qué se transformó la ninfa Dafne para escapar del acoso del dios Apolo?", a: ["En una estatua de mármol", "En un árbol de laurel", "En una fuente de agua salada", "En una conestelación de estrellas"], correct: 1 },
+        { q: "¿Qué arma utilizó Hércules para vencer finalmente a la Hidra de Lerna?", a: ["Una red mágica tejida por Atenea", "Su maza de madera de olivo", "Una espada con la que cortó la cabeza de oro", "El fuego para quemar sus cincuenta cabezas"], correct: 2 },
+        { q: "¿Cómo logró Zeus secuestrar a la princesa Europa en la playa de Tiro?", a: ["Se convirtió en una lluvia de oro.", "Se transformó en un toro blanco y manso.", "La convenció con un regalo de joyas divinas.", "Se hizo pasar por un marinero griego."], correct: 1 },
+        { q: "¿Qué monstruo habitaba en el centro del laberinto de Cnoso?", a: ["La Hidra", "La Esfinge", "El Minotauro", "La Medusa"], correct: 2 },
+        { q: "¿Qué objeto entregó Ariadna a Teseo para que pudiera salir del laberinto?", a: ["Un mapa detallado de Dédalo", "Una espada de oro brillante", "Un ovillo de hilo de seda", "Unas sandalias con alas"], correct: 2 },
+        { q: "¿Por qué cayó Ícaro al mar durante su huida de Creta?", a: ["Porque una tormenta rompió sus alas.", "Porque voló muy alto y el sol derritió la cera de sus alas.", "Porque las aves le atacaron al verlo volar.", "Porque se quedó dormido mientras volaba."], correct: 1 },
+        { q: "¿Cuál era la respuesta al enigma de la Esfinge que Edipo resolvió?", a: ["El tiempo", "El hombre", "El sol", "El río"], correct: 1 },
+        { q: "¿En qué animal convirtió la diosa Atenea a Aracne tras su desafío de tejido?", a: ["En una abeja", "En una mariposa", "En una araña", "En un escarabajo"], correct: 2 },
+        { q: "¿Por qué el rey Midas acabó suplicando a Dionisos que le quitara su don?", a: ["Porque no podía dormir por el brillo del oro.", "Porque convirtió a su propia hija en una estatua de oro.", "Porque los demás reyes querían robarle su reino.", "Porque el oro pesaba demasiado y no podía caminar."], correct: 1 },
+        { q: "¿Qué objeto utilizó Perseo para poder mirar a Medusa sin convertirse en piedra?", a: ["Un casco que le hacía invisible.", "Un escudo de bronce que brillaba como un espejo.", "Una túnica que le tapaba los ojos.", "Unos diamantes que reflejaban la luz."], correct: 1 },
+        { q: "¿Qué condición le pusieron Hades y Perséfone a Orfeo para recuperar a Eurídice?", a: ["Que debía cantar sin parar hasta salir del infierno.", "Que no podía mirar atrás hacia su esposa hasta salir a la luz del sol.", "Que debía entregar su lira a cambio de la vida de ella.", "Que debía convencer al barquero Caronte primero."], correct: 1 },
+        { q: "¿Quién tuvo la idea de construir el caballo de madera para engañar a los troyanos?", a: ["Agamenón", "Aquiles", "Ulises", "Príamo"], correct: 2 },
+        { q: "¿Qué advertía la joven Casandra a los troyanos sobre el caballo de madera?", a: ["Que era un regalo sagrado para Atenea.", "Que contenía tesoros robados de los griegos.", "Que era un engaño que traería la muerte a la ciudad.", "Que debían quemarlo inmediatamente en la playa."], correct: 2 },
+        { q: "¿Qué manjar aseguraba la inmortalidad de los dioses en el Olimpo?", a: ["La carne de buey de Prometeo", "El néctar y la ambrosía", "El agua del manantial de Poseidón", "Los frutos del jardín de Midas"], correct: 1 }
+    ];
 
-        let currentIndex = 0;
+    let currentIdx = 0;
+    let totalPoints = 0;
+    let answersState = new Array(questions.length).fill(null); // Para guardar qué respondió en cada una
 
-        function flipCard() {
-            document.getElementById('card').classList.toggle('flipped');
+    function init() {
+        const area = document.getElementById('questions-area');
+        questions.forEach((q, i) => {
+            const div = document.createElement('div');
+            div.className = `question ${i === 0 ? 'active' : ''}`;
+            div.id = `q-block-${i}`;
+            div.innerHTML = `
+                <div style="font-weight:bold; margin-bottom:10px;">Pregunta ${i+1} de ${questions.length}</div>
+                <div style="font-size:1.1rem; margin-bottom:15px;">${q.q}</div>
+                <div class="options-grid" id="options-${i}">
+                    ${q.a.map((opt, optIdx) => `
+                        <button class="option" id="btn-${i}-${optIdx}" onclick="select(${i}, ${optIdx})">${opt}</button>
+                    `).join('')}
+                </div>
+            `;
+            area.appendChild(div);
+        });
+        updateNav();
+    }
+
+    window.select = function(qIdx, choice) {
+        if (answersState[qIdx] !== null) return; // Ya contestada
+
+        answersState[qIdx] = choice;
+        const isCorrect = choice === questions[qIdx].correct;
+        
+        // Calcular puntos
+        if (isCorrect) {
+            totalPoints += 5;
+        } else {
+            totalPoints -= 5;
         }
+        
+        document.getElementById('current-points').innerText = totalPoints;
+        renderSelection(qIdx, choice);
+    }
 
-        function nextQuestion() {
-            const card = document.getElementById('card');
-            card.classList.remove('flipped'); // Resetear vuelta
-            
-            setTimeout(() => {
-                currentIndex = Math.floor(Math.random() * trivia.length);
-                document.getElementById('questionText').innerText = trivia[currentIndex].q;
-                document.getElementById('answerText').innerText = trivia[currentIndex].a;
-                document.getElementById('counter').innerText = `Pregunta aleatoria activa`;
-            }, 200); // Pequeña espera para que no se vea el cambio de texto antes de girar
+    function renderSelection(qIdx, choice) {
+        const correct = questions[qIdx].correct;
+        questions[qIdx].a.forEach((_, i) => {
+            const btn = document.getElementById(`btn-${qIdx}-${i}`);
+            btn.disabled = true; // Bloquear todos
+            if (i === correct) {
+                btn.classList.add('correct'); // Mostrar la correcta en verde
+            } else if (i === choice) {
+                btn.classList.add('wrong'); // Si eligió mal, marcar en rojo
+            }
+        });
+    }
+
+    window.changeQuestion = function(step) {
+        document.getElementById(`q-block-${currentIdx}`).classList.remove('active');
+        currentIdx += step;
+        document.getElementById(`q-block-${currentIdx}`).classList.add('active');
+        updateNav();
+    }
+
+    function updateNav() {
+        document.getElementById('prev-btn').disabled = (currentIdx === 0);
+        document.getElementById('next-btn').innerText = (currentIdx === questions.length - 1) ? "Finalizar" : "Siguiente ➡️";
+        if (currentIdx === questions.length) {
+            alert("Has terminado. Puntuación final: " + totalPoints);
+            location.reload();
         }
+    }
 
-        // Iniciar con la primera pregunta
-        nextQuestion();
-    </script>
+    init();
+</script>
 </body>
 </html>
